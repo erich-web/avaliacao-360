@@ -68,6 +68,10 @@ main{padding:48px 0 96px}
 .badge-black{background:var(--black);color:var(--off-white)}
 .badge-outline{border:1px solid rgba(15,15,15,.3);color:rgba(15,15,15,.65)}
 .spacer{flex:1}
+.filtro{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 4px}
+.filtro input{font-family:var(--f-body);font-size:.9375rem;flex:1;min-width:180px;background:var(--white);
+  border:1px solid rgba(15,15,15,.22);padding:11px 14px;outline:none;color:var(--black)}
+.filtro input:focus{border-color:var(--green)}
 
 /* ---------- formulário ---------- */
 .form-head{background:var(--black);color:var(--off-white);padding:28px 0 30px;position:relative}
@@ -76,7 +80,7 @@ main{padding:48px 0 96px}
 .item:first-of-type{border-top:none}
 .item h3{font-family:var(--f-body);font-weight:600;font-size:1.0625rem;line-height:1.35}
 .item p{font-size:.875rem;color:rgba(15,15,15,.6);margin-top:4px;max-width:62ch}
-.scale{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:16px;max-width:420px}
+.scale{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:16px;max-width:460px}
 .opt{border:1px solid rgba(15,15,15,.22);background:transparent;cursor:pointer;font-family:var(--f-body);
   padding:10px 2px;text-align:center;transition:all .15s var(--ease);min-width:0}
 .opt .n{display:block;font-family:var(--f-display);font-size:1.1rem;line-height:1}
@@ -143,7 +147,7 @@ footer{border-top:1px solid rgba(15,15,15,.1);padding:28px 0;font-size:11px;
   <div class="mark">RPE</div>
   <div class="wrap inner">
     <div class="brand">RPE</div>
-    <div class="section-label" style="margin:22px 0 14px">Avaliação 360 · Backoffice</div>
+    <div class="section-label" style="margin:22px 0 14px" id="hCiclo">Grupo RPE</div>
     <h1 id="hTitle">CARREGANDO…</h1>
     <p class="sub" id="hSub">Um instante.</p>
   </div>
@@ -183,10 +187,37 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
   {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const SCALE = [
-  {v:1, l:'Muito<br>abaixo'}, {v:2, l:'Abaixo'}, {v:3, l:'Atende'},
-  {v:4, l:'Acima'}, {v:5, l:'Referência'}
+const ESCALA_PADRAO = [
+  {v:1, r:'Muito abaixo'}, {v:2, r:'Abaixo'}, {v:3, r:'Atende'},
+  {v:4, r:'Acima'}, {v:5, r:'Referência'}, {v:'NA', r:'Não observei'}
 ];
+
+/* escala vem do ciclo; separa as notas numéricas do "não observei" */
+function escalaDoCiclo(){
+  const e = (DATA && DATA.ciclo && Array.isArray(DATA.ciclo.escala) && DATA.ciclo.escala.length)
+    ? DATA.ciclo.escala : ESCALA_PADRAO;
+  return {
+    notas: e.filter(s => s.v !== 'NA'),
+    na: e.find(s => s.v === 'NA') || {v:'NA', r:'Não observei'}
+  };
+}
+/* "Abaixo do esperado" -> "Abaixo do<br>esperado" para caber no botão */
+function quebra(txt){
+  const p = String(txt).trim().split(/\s+/);
+  if (p.length < 2) return esc(txt);
+  const corte = Math.ceil(p.length / 2);
+  return esc(p.slice(0, corte).join(' ')) + '<br>' + esc(p.slice(corte).join(' '));
+}
+
+const NOME_BLOCO = {
+  nucleo:'Comportamentos essenciais RPE',
+  nucleo_op:'Os essenciais RPE no dia a dia',
+  atd:'Atendimento e execução no salão',
+  dir:'Competências de diretoria',
+  ger:'Competências de gestão',
+  asn:'Competências de execução',
+  lid:'Liderança'
+};
 
 const TIPO_INFO = {
   auto:        {badge:'Autoavaliação', cls:'badge-black',
@@ -222,6 +253,11 @@ function iniciais(nome){
 function itensDa(av){
   const blocos = av.blocos || [];
   return DATA.itens.filter(i => blocos.includes(i.bloco));
+}
+
+/* texto do item: na autoavaliação usa a versão em 1ª pessoa, quando existe */
+function tituloItem(i, av){
+  return (av.tipo === 'auto' && i.pergunta_auto) ? i.pergunta_auto : i.titulo;
 }
 
 function completa(av){
@@ -260,8 +296,16 @@ function renderList(){
   if (done === av.length && av.length > 0){
     html += '<div class="note" style="margin-top:32px"><p>Suas respostas foram registradas. '
          + 'O RH consolida os resultados e agenda a conversa de feedback.</p>'
-         + '<div class="who">Grupo RPE · Ciclo ' + esc(DATA.ciclo.ano) + '</div></div>';
+         + '<div class="who">Grupo RPE · ' + esc(DATA.ciclo.nome) + '</div></div>';
   }
+
+  /* pauta longa (gerente de operação com 30 pessoas) ganha busca */
+  const muitos = av.length > 12;
+  if (muitos && done < av.length){
+    html += '<div class="filtro"><input id="qNome" type="search" placeholder="Buscar por nome ou função…" '
+         + 'autocomplete="off"></div>';
+  }
+
   ['auto','ascendente','descendente','par'].forEach(tipo => {
     const grupo = av.filter(a => a.tipo === tipo);
     if (!grupo.length) return;
@@ -271,11 +315,13 @@ function renderList(){
     grupo.forEach(a => {
       const enviada = a.status === 'enviada';
       const rasc = a.status === 'rascunho';
+      const sub = [a.cargo, a.area].filter(Boolean).join(' · ');
       html += '<button class="card" data-done="'+(enviada?1:0)+'" data-id="'+a.id+'"'
+           + ' data-q="' + esc(((a.nome||'') + ' ' + (a.cargo||'') + ' ' + (a.area||'')).toLowerCase()) + '"'
            + (enviada?' disabled':'') + '>'
            + '<span class="avatar">' + esc(iniciais(a.nome)) + '</span>'
            + '<span class="who"><span class="nome">' + esc(a.tipo==='auto' ? 'Você mesmo' : a.nome) + '</span>'
-           + '<span class="cargo">' + esc(a.cargo) + ' · ' + esc(a.area) + '</span></span>'
+           + '<span class="cargo">' + esc(sub) + '</span></span>'
            + '<span class="spacer"></span>'
            + '<span class="badge ' + (enviada ? 'badge-green' : rasc ? 'badge-outline' : 'badge-black') + '">'
            + (enviada ? 'Enviada' : rasc ? 'Rascunho' : 'Preencher') + '</span>'
@@ -285,6 +331,14 @@ function renderList(){
   el.innerHTML = html;
   el.querySelectorAll('.card:not([disabled])').forEach(b =>
     b.addEventListener('click', () => openForm(b.dataset.id)));
+
+  const q = $('qNome');
+  if (q) q.addEventListener('input', () => {
+    const t = q.value.trim().toLowerCase();
+    el.querySelectorAll('.card').forEach(c =>
+      c.classList.toggle('hidden', !!t && (c.dataset.q||'').indexOf(t) === -1));
+  });
+
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -300,12 +354,14 @@ function openForm(id){
 
   const info = TIPO_INFO[CUR.tipo];
   const alvo = CUR.tipo === 'auto' ? 'você mesmo' : CUR.nome;
+  const prim = CUR.tipo === 'auto' ? 'você mesmo' : (CUR.primeiro_nome || CUR.nome);
   $('hTitle').innerHTML = esc((CUR.tipo==='auto' ? 'AUTOAVALIAÇÃO' : CUR.nome).toUpperCase());
   $('hSub').textContent = CUR.tipo === 'auto'
     ? 'Sua leitura sobre o próprio ano.'
-    : CUR.cargo + ' · ' + CUR.area + ' — ' + info.desc;
+    : [CUR.cargo, CUR.area].filter(Boolean).join(' · ') + ' — ' + info.desc;
 
   const itens = itensDa(CUR);
+  const ESC = escalaDoCiclo();
   let html = '<div style="margin-top:36px" class="section-label">' + esc(info.badge) + '</div>';
 
   html += '<div class="note" style="margin-top:16px"><p>' + esc(
@@ -321,52 +377,62 @@ function openForm(id){
   itens.forEach(i => {
     if (i.bloco !== blocoAtual){
       blocoAtual = i.bloco;
-      const nomeBloco = {nucleo:'Comportamentos essenciais RPE', dir:'Competências de diretoria',
-        ger:'Competências de gestão', asn:'Competências de execução', lid:'Liderança'}[i.bloco] || '';
+      const nomeBloco = NOME_BLOCO[i.bloco] || '';
       html += '<h2 class="group-title" style="margin-top:34px">' + esc(nomeBloco) + '</h2>';
     }
     const val = CUR.respostas[i.codigo];
-    html += '<div class="item"><h3>' + esc(i.titulo) + '</h3><p>' + esc(i.descricao) + '</p>'
+    html += '<div class="item"><h3>' + esc(tituloItem(i, CUR)) + '</h3><p>' + esc(i.descricao) + '</p>'
          + '<div class="scale" data-cod="' + i.codigo + '">';
-    SCALE.forEach(s => {
+    ESC.notas.forEach(s => {
       html += '<button type="button" class="opt" data-v="' + s.v + '" aria-pressed="'
            + (String(val) === String(s.v)) + '"><span class="n">' + s.v
-           + '</span><span class="l">' + s.l + '</span></button>';
+           + '</span><span class="l">' + quebra(s.r) + '</span></button>';
     });
     html += '<button type="button" class="opt na" data-v="NA" aria-pressed="' + (val === 'NA')
-         + '"><span class="n">N/A</span><span class="l">Não<br>observei</span></button>';
-    html += '</div><div class="legend">1 muito abaixo · 2 abaixo · 3 atende · 4 acima · 5 referência · N/A não observei</div>';
+         + '"><span class="n">N/O</span><span class="l">' + quebra(ESC.na.r) + '</span></button>';
+    html += '</div><div class="legend">'
+         + ESC.notas.map(s => s.v + ' ' + s.r.toLowerCase()).join(' · ')
+         + ' · N/O ' + ESC.na.r.toLowerCase() + '</div>';
     html += '</div>';
   });
   html += '</div>';
 
   html += '<div class="item" style="border-top:1px solid rgba(15,15,15,.12)">'
-       + '<label class="lbl" for="f_forte">O que ' + esc(CUR.tipo==='auto'?'você faz':alvo+' faz')
+       + '<label class="lbl" for="f_forte">O que ' + esc(CUR.tipo==='auto'?'você faz':prim+' faz')
        + ' muito bem e deve continuar fazendo?</label>'
-       + '<textarea id="f_forte" placeholder="Seja concreto: cite uma situação, um projeto, um comportamento.">'
+       + '<textarea id="f_forte" placeholder="Seja concreto: cite uma situação, um turno, um comportamento.">'
        + esc(CUR.ponto_forte) + '</textarea>'
        + '<div class="hint">Mínimo 15 caracteres. Exemplos ajudam mais do que adjetivos.</div></div>';
 
   html += '<div class="item">'
-       + '<label class="lbl" for="f_dev">O que ' + esc(CUR.tipo==='auto'?'você deveria':alvo+' deveria')
-       + ' começar a fazer (ou fazer diferente) para ter mais impacto em 2027?</label>'
+       + '<label class="lbl" for="f_dev">O que ' + esc(CUR.tipo==='auto'?'você deveria':prim+' deveria')
+       + ' começar a fazer (ou fazer diferente) para ter mais impacto no próximo ciclo?</label>'
        + '<textarea id="f_dev" placeholder="Uma coisa só, bem escolhida, vale mais do que cinco genéricas.">'
        + esc(CUR.ponto_desenvolver) + '</textarea>'
        + '<div class="hint">Mínimo 15 caracteres.</div></div>';
+
+  if (CUR.pede_clima){
+    html += '<div class="item">'
+         + '<label class="lbl" for="f_clima">Como está o clima na sua casa? O que ajudaria o time a trabalhar melhor?</label>'
+         + '<textarea id="f_clima" placeholder="Pode falar de escala, equipamento, comunicação, relação com a liderança — o que você quiser.">'
+         + esc(CUR.clima_casa) + '</textarea>'
+         + '<div class="hint">Opcional. Vai para o RH de forma agregada, junto com as respostas dos colegas.</div></div>';
+  }
 
   if (CUR.pede_bloco_gestor){
     html += '<div class="box-gestor"><div class="section-label">Bloco do gestor · Calibração</div>'
          + '<p class="hint" style="margin-top:10px">Visível apenas para RH e diretoria. Usado na reunião de calibração.</p>'
          + '<div class="grid2">'
-         + sel('g_nota','Desempenho geral no ano', CUR.nota_geral, [
+         + sel('g_nota','Desempenho geral no ciclo', CUR.nota_geral, [
              ['5','5 · Referência no grupo'],['4','4 · Acima do esperado'],['3','3 · Atende ao esperado'],
-             ['2','2 · Abaixo do esperado'],['1','1 · Muito abaixo do esperado']])
+             ['2','2 · Precisa melhorar'],['1','1 · Abaixo do esperado']])
          + sel('g_pot','Potencial de crescimento', CUR.potencial, [
              ['alto','Alto'],['medio','Médio'],['baixo','Baixo']])
          + sel('g_risco','Risco de perder essa pessoa', CUR.risco_perda, [
              ['alto','Alto'],['medio','Médio'],['baixo','Baixo']])
          + sel('g_pront','Prontidão para o próximo passo', CUR.prontidao, [
-             ['pronto_agora','Pronto agora'],['1_2_anos','Em 1 a 2 anos'],['nao_no_momento','Não no momento']])
+             ['pronto_agora','Pronto agora'],['1_2_anos','Em 1 a 2 anos'],['mais_2_anos','Em mais de 2 anos'],
+             ['nao_no_momento','Não no momento'],['nao_se_aplica','Não se aplica']])
          + '</div>'
          + '<div class="field" style="margin-top:20px"><label class="lbl" for="g_rh">Comentário confidencial para o RH (opcional)</label>'
          + '<textarea id="g_rh" placeholder="Contexto que ajuda o RH e que não entra na conversa de feedback.">'
@@ -415,6 +481,7 @@ function collect(){
     ponto_forte: ($('f_forte')||{}).value || '',
     ponto_desenvolver: ($('f_dev')||{}).value || ''
   };
+  if (CUR.pede_clima) p.clima_casa = ($('f_clima')||{}).value || '';
   if (CUR.pede_bloco_gestor){
     p.nota_geral = $('g_nota').value || null;
     p.potencial = $('g_pot').value || '';
@@ -427,6 +494,7 @@ function collect(){
 
 function applyLocal(p){
   CUR.ponto_forte = p.ponto_forte; CUR.ponto_desenvolver = p.ponto_desenvolver;
+  if (CUR.pede_clima) CUR.clima_casa = p.clima_casa;
   if (CUR.pede_bloco_gestor){
     CUR.nota_geral = p.nota_geral; CUR.potencial = p.potencial;
     CUR.risco_perda = p.risco_perda; CUR.prontidao = p.prontidao;
@@ -474,17 +542,18 @@ async function save(enviar, silent){
 /* ============================ BOOT ============================ */
 async function boot(){
   if (!TOKEN){ return fail('Link inválido',
-    'Use o link pessoal que você recebeu por e-mail. Ele já identifica você — não precisa de senha.'); }
+    'Use o link pessoal que você recebeu. Ele já identifica você — não precisa de senha.'); }
   let r;
   try { r = await call('pauta'); }
   catch(e){ return fail('Erro de conexão','Recarregue a página em alguns instantes.'); }
 
   if (!r || !r.ok){
     if (r && r.erro === 'token_invalido')
-      return fail('Link não reconhecido','Confira se copiou o endereço inteiro do e-mail, ou fale com o RH.');
+      return fail('Link não reconhecido','Confira se copiou o endereço inteiro da mensagem, ou fale com o RH.');
     return fail('Algo saiu do lugar','Tente novamente ou avise o RH.');
   }
   DATA = r;
+  if (DATA.ciclo && DATA.ciclo.nome) $('hCiclo').textContent = DATA.ciclo.nome;
   if (!DATA.ciclo.aberto) return fail('Ciclo encerrado','O período de preenchimento já foi fechado. Fale com o RH.');
   renderList();
 }

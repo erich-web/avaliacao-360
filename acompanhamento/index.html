@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Acompanhamento · Avaliação RPE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#0F0F0F; --dark:#1A1A1A; --space-gray:#313131;
+  --off-white:#F5F4F0; --white:#FFFFFF; --green:#00B73D; --green-dark:#009932;
+  --red:#B3001B;
+  --f-display:'Anton',sans-serif; --f-serif:'Spectral',serif; --f-body:'DM Sans',sans-serif;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--off-white);color:var(--black);font-family:var(--f-body);line-height:1.6;
+     -webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+@media(min-width:900px){.wrap{padding:0 48px}}
+
+header{background:var(--black);color:var(--off-white);position:relative;overflow:hidden}
+header .mark{position:absolute;right:-.04em;bottom:-.18em;font-family:var(--f-serif);font-weight:600;
+  font-size:clamp(9rem,26vw,18rem);color:rgba(245,244,240,.03);line-height:1;pointer-events:none;letter-spacing:-.03em}
+header .inner{position:relative;z-index:1;padding:40px 0 44px}
+.brand{font-family:var(--f-serif);font-weight:600;letter-spacing:-.03em;font-size:1.5rem}
+.section-label{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.18em;color:var(--green)}
+.section-label::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+h1{font-family:var(--f-display);text-transform:uppercase;line-height:.92;
+   font-size:clamp(1.75rem,6.4vw,4rem);overflow-wrap:anywhere}
+h1 em{font-style:normal;color:var(--green)}
+.sub{font-family:var(--f-serif);font-style:italic;font-size:1.0625rem;color:rgba(245,244,240,.55);margin-top:12px}
+
+main{padding:40px 0 90px}
+.ciclo{margin-bottom:56px}
+.ciclo-nome{font-family:var(--f-display);text-transform:uppercase;font-size:1.35rem;letter-spacing:.02em;
+  margin-bottom:4px;overflow-wrap:anywhere}
+.prazo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(15,15,15,.5)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:rgba(15,15,15,.12);
+  border:1px solid rgba(15,15,15,.12);margin:18px 0 0}
+.kpi{background:var(--white);padding:18px 20px}
+.kpi .n{font-family:var(--f-display);font-size:2.4rem;line-height:1}
+.kpi .n.verde{color:var(--green-dark)}
+.kpi .n.vermelho{color:var(--red)}
+.kpi .l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:rgba(15,15,15,.5);margin-top:4px}
+.track{height:8px;background:rgba(15,15,15,.12);margin-top:1px}
+.track > i{display:block;height:100%;background:var(--green)}
+
+table{width:100%;border-collapse:collapse;margin-top:26px;font-size:.875rem;background:var(--white)}
+th{background:var(--black);color:var(--off-white);font-size:9.5px;font-weight:700;text-transform:uppercase;
+   letter-spacing:.12em;padding:11px 12px;text-align:left;white-space:nowrap}
+th.num,td.num{text-align:right}
+td{padding:11px 12px;border-bottom:1px solid rgba(15,15,15,.09);vertical-align:top}
+tr.ok td{color:rgba(15,15,15,.45)}
+tr.ok .nome{font-weight:500}
+.nome{font-weight:600}
+.cargo{display:block;font-size:.75rem;color:rgba(15,15,15,.5);font-weight:400}
+.pill{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  padding:4px 8px;line-height:1;white-space:nowrap}
+.pill.done{background:var(--green);color:var(--black)}
+.pill.andando{border:1px solid rgba(15,15,15,.3);color:rgba(15,15,15,.65)}
+.pill.parado{background:var(--black);color:var(--off-white)}
+.pill.alerta{background:var(--red);color:#fff}
+.center{text-align:center;padding:90px 0}
+.hidden{display:none!important}
+.btn{font-family:var(--f-body);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
+  padding:14px 28px;border:none;cursor:pointer;background:var(--black);color:var(--off-white);margin-top:28px}
+.btn:hover{background:var(--dark)}
+footer{border-top:1px solid rgba(15,15,15,.1);padding:26px 0;font-size:11px;
+  color:rgba(15,15,15,.45);text-align:center}
+@media print{
+  header{background:#fff;color:#000}
+  header .mark,.btn{display:none}
+  h1,.brand{color:#000}
+  .sub{color:#444}
+  th{background:#eee;color:#000}
+  .ciclo{page-break-inside:avoid}
+}
+@media(max-width:640px){
+  .hide-sm{display:none}
+  td,th{padding:9px 8px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mark">RPE</div>
+  <div class="wrap inner">
+    <div class="brand">RPE</div>
+    <div class="section-label" style="margin:22px 0 14px">Acompanhamento das avaliações</div>
+    <h1 id="hTitle">CARREGANDO…</h1>
+    <p class="sub" id="hSub">Um instante.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view"></section>
+  <section id="viewMsg" class="center hidden"></section>
+</main>
+
+<footer class="wrap">
+  Grupo RPE · Esta página mostra apenas quem já enviou. Nenhuma resposta é exibida aqui.
+</footer>
+
+<script>
+const API = 'https://lqycimhfklufueclkzfr.supabase.co/functions/v1/avaliacao';
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function call(action){
+  const r = await fetch(API, {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action, token:TOKEN})});
+  return r.json();
+}
+
+function dataBR(iso){
+  if (!iso) return '';
+  const d = new Date(iso + 'T12:00:00');
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'long'});
+}
+
+function situacao(p){
+  if (p.total === 0) return ['—','andando'];
+  if (p.enviadas === p.total) return ['Completo','done'];
+  if (!p.acessou) return ['Nem abriu','alerta'];
+  if (p.enviadas === 0) return ['Abriu, não enviou','parado'];
+  return ['Em andamento','andando'];
+}
+
+function renderCiclo(c){
+  const falta = c.total - c.enviadas;
+  const pct = c.total ? Math.round(c.enviadas / c.total * 100) : 0;
+  const pessoas = c.pessoas || [];
+  const completos = pessoas.filter(p => p.total > 0 && p.enviadas === p.total).length;
+  const nemAbriu = pessoas.filter(p => p.total > 0 && !p.acessou).length;
+
+  let h = '<div class="ciclo">';
+  h += '<div class="ciclo-nome">' + esc(c.nome) + '</div>';
+  h += '<div class="prazo">' + (c.aberto ? 'Aberto' : 'Encerrado')
+     + (c.fecha_em ? ' · prazo ' + esc(dataBR(c.fecha_em)) : '') + '</div>';
+
+  h += '<div class="kpis">'
+     + '<div class="kpi"><div class="n verde">' + c.enviadas + '</div><div class="l">Formulários enviados</div></div>'
+     + '<div class="kpi"><div class="n' + (falta ? ' vermelho' : '') + '">' + falta + '</div><div class="l">Ainda faltam</div></div>'
+     + '<div class="kpi"><div class="n">' + completos + '<span style="font-size:1.1rem">/' + pessoas.length + '</span></div>'
+     + '<div class="l">Pessoas que terminaram</div></div>'
+     + '<div class="kpi"><div class="n' + (nemAbriu ? ' vermelho' : '') + '">' + nemAbriu + '</div>'
+     + '<div class="l">Nem abriram o link</div></div>'
+     + '</div>';
+  h += '<div class="track"><i style="width:' + pct + '%"></i></div>';
+
+  h += '<table><thead><tr><th>Pessoa</th><th class="hide-sm">Onde</th>'
+     + '<th class="num">Enviadas</th><th class="num">Faltam</th>'
+     + '<th>Situação</th><th class="hide-sm">Último acesso</th></tr></thead><tbody>';
+  pessoas.forEach(p => {
+    const [txt, cls] = situacao(p);
+    const pronto = p.total > 0 && p.enviadas === p.total;
+    h += '<tr class="' + (pronto ? 'ok' : '') + '">'
+       + '<td><span class="nome">' + esc(p.nome) + '</span>'
+       + '<span class="cargo">' + esc(p.cargo)
+       + (p.sem_email ? ' · <strong style="color:#B3001B">sem e-mail cadastrado</strong>' : '')
+       + '</span></td>'
+       + '<td class="hide-sm">' + esc(p.onde) + '</td>'
+       + '<td class="num">' + p.enviadas + '</td>'
+       + '<td class="num">' + (p.total - p.enviadas) + '</td>'
+       + '<td><span class="pill ' + cls + '">' + esc(txt) + '</span></td>'
+       + '<td class="hide-sm">' + esc(p.ultimo_acesso || '—') + '</td>'
+       + '</tr>';
+  });
+  h += '</tbody></table></div>';
+  return h;
+}
+
+async function boot(){
+  if (!TOKEN) return fail('Link inválido', 'Use o seu link pessoal de acompanhamento.');
+  let r;
+  try { r = await call('acompanhamento'); }
+  catch(e){ return fail('Erro de conexão', 'Recarregue a página em alguns instantes.'); }
+
+  if (!r || !r.ok){
+    if (r && r.erro === 'sem_permissao')
+      return fail('Sem acesso', 'Este painel é restrito ao RH e à diretoria.');
+    return fail('Link não reconhecido', 'Confira o endereço ou fale com o RH.');
+  }
+
+  $('hTitle').innerHTML = 'QUEM JÁ<br><em>RESPONDEU</em>';
+  $('hSub').textContent = 'Atualizado em ' + r.gerado_em + ' · ' + r.quem.nome;
+  $('view').innerHTML = (r.ciclos || []).map(renderCiclo).join('')
+    + '<button class="btn" onclick="window.print()">Imprimir / salvar PDF</button>';
+}
+
+function fail(t, s){
+  $('hTitle').textContent = t.toUpperCase();
+  $('hSub').textContent = s;
+  $('viewMsg').classList.remove('hidden');
+  $('viewMsg').innerHTML = '<p style="font-family:var(--f-serif);font-size:1.125rem;color:rgba(15,15,15,.6)">'
+    + 'Precisa de ajuda? Fale com o RH do Grupo RPE.</p>';
+}
+boot();
+</script>
+</body>
+</html>
